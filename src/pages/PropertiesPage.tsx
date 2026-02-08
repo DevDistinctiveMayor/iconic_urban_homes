@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { MapPin, Home, DollarSign } from 'lucide-react';
 import { propertyService } from '../services/api';
-import { PropertyType, PropertyStatus } from '../types';
+import { PropertyType } from '../types';
 
 export function PropertiesPage() {
   const [filters, setFilters] = useState({
