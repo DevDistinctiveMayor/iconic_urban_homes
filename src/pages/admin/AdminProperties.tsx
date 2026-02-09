@@ -145,25 +145,85 @@ function PropertyForm({
     address: property?.address || '',
     city: property?.city || '',
     state: property?.state || '',
+    zipCode: property?.zipCode || '',
     bedrooms: property?.bedrooms || '',
     bathrooms: property?.bathrooms || '',
   });
 
+  const [images, setImages] = useState<File[]>([]);
+
   const mutation = useMutation({
-    mutationFn: (data: any) =>
-      property
-        ? propertyService.updateProperty(property.id, data)
-        : propertyService.createProperty(data),
-    onSuccess,
+    mutationFn: async (data: any) => {
+      // First create/update the property
+      const response = property
+        ? await propertyService.updateProperty(property.id, data)
+        : await propertyService.createProperty(data);
+      
+      // Then upload images if any
+      if (images.length > 0 && response.data.id) {
+        const formData = new FormData();
+        images.forEach((image) => {
+          formData.append('files', image);
+        });
+
+        try {
+          await fetch(`/api/properties/${response.data.id}/images`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: formData,
+          });
+        } catch (uploadError) {
+          console.error('Image upload failed:', uploadError);
+          // Property is created, just images failed
+        }
+      }
+      
+      return response;
+    },
+    onSuccess: () => {
+      setImages([]); // Clear images
+      onSuccess();
+    },
+    onError: (error: any) => {
+      console.error('Full error object:', error);
+      console.error('Error response:', error.response?.data);
+      const errorMessage = error.response?.data?.details || error.response?.data?.error || error.message || 'Failed to save property';
+      alert(`Error: ${errorMessage}\n\nCheck console for details.`);
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate(formData);
+    
+    // Validate required fields
+    if (!formData.title || !formData.location || !formData.address || !formData.city || !formData.state) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    // Convert string values to numbers for backend
+    const submitData = {
+      ...formData,
+      price: Number(formData.price),
+      area: Number(formData.area),
+      bedrooms: formData.bedrooms ? Number(formData.bedrooms) : undefined,
+      bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
+    };
+    
+    console.log('Submitting property data:', submitData);
+    mutation.mutate(submitData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {mutation.isError && (
+        <div className="p-4 bg-red-100 text-red-700 rounded-lg">
+          Failed to save property. Please check all required fields.
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-2">Title *</label>
@@ -229,6 +289,24 @@ function PropertyForm({
             required
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Bedrooms</label>
+          <input
+            type="number"
+            className="input"
+            value={formData.bedrooms}
+            onChange={(e) => setFormData({ ...formData, bedrooms: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Bathrooms</label>
+          <input
+            type="number"
+            className="input"
+            value={formData.bathrooms}
+            onChange={(e) => setFormData({ ...formData, bathrooms: e.target.value })}
+          />
+        </div>
       </div>
       
       <div>
@@ -238,6 +316,18 @@ function PropertyForm({
           className="input"
           value={formData.address}
           onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">Location/Area *</label>
+        <input
+          type="text"
+          className="input"
+          placeholder="e.g., Kabusa, Gwarinpa, etc."
+          value={formData.location}
+          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
           required
         />
       </div>
@@ -253,9 +343,38 @@ function PropertyForm({
         />
       </div>
 
-      <div className="flex gap-4">
+      <div>
+        <label className="block text-sm font-medium mb-2">Property Images</label>
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          className="input file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+          onChange={(e) => {
+            if (e.target.files) {
+              setImages(Array.from(e.target.files));
+            }
+          }}
+        />
+        {images.length > 0 && (
+          <div className="mt-2">
+            <p className="text-sm text-green-600 font-medium">
+              ✓ {images.length} image(s) selected - will be uploaded when you save
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {images.map((file, index) => (
+                <div key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                  {file.name}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-4 pt-4">
         <button type="submit" className="btn btn-primary" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Saving...' : property ? 'Update' : 'Create'}
+          {mutation.isPending ? 'Saving...' : property ? 'Update Property' : 'Create Property'}
         </button>
         <button type="button" onClick={onCancel} className="btn btn-secondary">
           Cancel

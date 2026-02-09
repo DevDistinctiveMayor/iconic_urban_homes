@@ -1,7 +1,8 @@
-import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Home, Calendar, Ruler } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import { propertyService } from '../services/api';
+import { API_CONFIG } from '../config/api.config';
+import { MapPin, Home, DollarSign, Bed, Bath } from 'lucide-react';
 
 export function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,8 +15,8 @@ export function PropertyDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
+      <div className="text-center py-12">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
       </div>
     );
   }
@@ -24,101 +25,113 @@ export function PropertyDetailPage() {
     return <div className="text-center py-12">Property not found</div>;
   }
 
+  const propertyData = property.data;
+  const primaryImage = propertyData.images?.find(img => img.isPrimary) || propertyData.images?.[0];
+
   return (
     <div className="py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Image Gallery */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {property.data.images.length > 0 ? (
-            property.data.images.map((image) => (
-              <div key={image.id} className="aspect-video bg-gray-200 rounded-lg overflow-hidden">
-                <img
-                  src={image.url}
-                  alt={property.data.title}
-                  className="w-full h-full object-cover"
-                />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+          {/* Main Image */}
+          <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden">
+            {primaryImage ? (
+              <img
+                src={API_CONFIG.getImageUrl(primaryImage.url)}
+                alt={propertyData.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error('Failed to load image');
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Home className="h-24 w-24 text-gray-400" />
               </div>
-            ))
-          ) : (
-            <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center col-span-2">
-              <Home className="h-24 w-24 text-gray-400" />
+            )}
+          </div>
+
+          {/* Thumbnail Grid */}
+          {propertyData.images && propertyData.images.length > 1 && (
+            <div className="grid grid-cols-2 gap-4">
+              {propertyData.images.slice(1, 5).map((image) => (
+                <div key={image.id} className="aspect-video bg-gray-200 rounded-lg overflow-hidden">
+                  <img
+                    src={API_CONFIG.getImageUrl(image.url)}
+                    alt={propertyData.title}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>
 
+        {/* Property Details */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
           <div className="lg:col-span-2">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">{property.data.title}</h1>
-                <div className="flex items-center text-gray-600">
-                  <MapPin className="h-5 w-5 mr-2" />
-                  {property.data.address}, {property.data.city}, {property.data.state}
-                </div>
-              </div>
-              <span className="px-4 py-2 bg-primary-100 text-primary-700 rounded-lg font-semibold">
-                {property.data.type}
-              </span>
+            <h1 className="text-3xl font-bold mb-4">{propertyData.title}</h1>
+            
+            <div className="flex items-center text-gray-600 mb-4">
+              <MapPin className="h-5 w-5 mr-2" />
+              {propertyData.address}, {propertyData.city}, {propertyData.state}
             </div>
 
-            <div className="text-3xl font-bold text-primary-600 mb-6">
-              ${Number(property.data.price).toLocaleString()}
+            <div className="flex items-center text-primary-600 font-bold text-3xl mb-6">
+              <DollarSign className="h-8 w-8" />
+              {Number(propertyData.price).toLocaleString()}
             </div>
 
-            <div className="card mb-6">
-              <h2 className="text-xl font-semibold mb-4">Property Details</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <div className="flex items-center text-gray-600 mb-1">
-                    <Ruler className="h-4 w-4 mr-2" />
-                    Area
-                  </div>
-                  <div className="font-semibold">{property.data.area} sq m</div>
-                </div>
-                {property.data.bedrooms && (
-                  <div>
-                    <div className="text-gray-600 mb-1">Bedrooms</div>
-                    <div className="font-semibold">{property.data.bedrooms}</div>
-                  </div>
-                )}
-                {property.data.bathrooms && (
-                  <div>
-                    <div className="text-gray-600 mb-1">Bathrooms</div>
-                    <div className="font-semibold">{property.data.bathrooms}</div>
-                  </div>
-                )}
-                {property.data.yearBuilt && (
-                  <div>
-                    <div className="flex items-center text-gray-600 mb-1">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Year Built
-                    </div>
-                    <div className="font-semibold">{property.data.yearBuilt}</div>
-                  </div>
-                )}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="card text-center">
+                <div className="text-2xl font-bold">{propertyData.area}</div>
+                <div className="text-sm text-gray-600">sq m</div>
               </div>
+              {propertyData.bedrooms && (
+                <div className="card text-center">
+                  <Bed className="h-6 w-6 mx-auto mb-2 text-primary-600" />
+                  <div className="text-2xl font-bold">{propertyData.bedrooms}</div>
+                  <div className="text-sm text-gray-600">Bedrooms</div>
+                </div>
+              )}
+              {propertyData.bathrooms && (
+                <div className="card text-center">
+                  <Bath className="h-6 w-6 mx-auto mb-2 text-primary-600" />
+                  <div className="text-2xl font-bold">{propertyData.bathrooms}</div>
+                  <div className="text-sm text-gray-600">Bathrooms</div>
+                </div>
+              )}
             </div>
 
             <div className="card">
               <h2 className="text-xl font-semibold mb-4">Description</h2>
-              <p className="text-gray-700 whitespace-pre-line">{property.data.description}</p>
+              <p className="text-gray-700 whitespace-pre-line">{propertyData.description}</p>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div>
-            <div className="card sticky top-24">
-              <h2 className="text-xl font-semibold mb-4">Interested in this property?</h2>
-              <p className="text-gray-600 mb-6">
-                Contact us for more information or to schedule a viewing.
-              </p>
-              <a
-                href={`/contact?property=${property.data.id}`}
-                className="btn btn-primary w-full text-center"
-              >
-                Contact Us
-              </a>
+          <div className="lg:col-span-1">
+            <div className="card sticky top-4">
+              <h3 className="text-lg font-semibold mb-4">Property Information</h3>
+              <div className="space-y-3">
+                <div>
+                  <span className="text-gray-600">Type:</span>
+                  <span className="ml-2 font-medium">{propertyData.type}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Status:</span>
+                  <span className="ml-2 font-medium">{propertyData.status}</span>
+                </div>
+                {propertyData.yearBuilt && (
+                  <div>
+                    <span className="text-gray-600">Year Built:</span>
+                    <span className="ml-2 font-medium">{propertyData.yearBuilt}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

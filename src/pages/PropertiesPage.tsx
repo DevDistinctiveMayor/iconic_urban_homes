@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Home, DollarSign } from 'lucide-react';
 import { propertyService } from '../services/api';
 import { PropertyType } from '../types';
+import { API_CONFIG } from '../config/api.config';
 
 export function PropertiesPage() {
   const [filters, setFilters] = useState({
@@ -89,46 +90,68 @@ export function PropertiesPage() {
         {data && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {data.data.properties.map((property) => (
-                <Link
-                  key={property.id}
-                  to={`/properties/${property.id}`}
-                  className="card hover:shadow-lg transition-shadow overflow-hidden p-0"
-                >
-                  <div className="aspect-video bg-gray-200">
-                    {property.images[0] ? (
-                      <img
-                        src={property.images[0].url}
-                        alt={property.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Home className="h-12 w-12 text-gray-400" />
+              {data.data.properties.map((property) => {
+                // Get the primary image or first image
+                const primaryImage = property.images?.find(img => img.isPrimary) || property.images?.[0];
+                const imageUrl = primaryImage ? API_CONFIG.getImageUrl(primaryImage.url) : '';
+
+                return (
+                  <Link
+                    key={property.id}
+                    to={`/properties/${property.id}`}
+                    className="card hover:shadow-lg transition-shadow overflow-hidden p-0"
+                  >
+                    <div className="aspect-video bg-gray-200">
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={property.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Failed to load image:', imageUrl);
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement!.innerHTML = `
+                              <div class="w-full h-full flex items-center justify-center">
+                                <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                </svg>
+                              </div>
+                            `;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Home className="h-12 w-12 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-lg font-semibold">{property.title}</h3>
+                        <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded">
+                          {property.type}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold">{property.title}</h3>
-                      <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded">
-                        {property.type}
-                      </span>
+                      <div className="flex items-center text-gray-600 text-sm mb-2">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        {property.city}, {property.state}
+                      </div>
+                      <div className="flex items-center text-primary-600 font-bold text-xl">
+                        <DollarSign className="h-5 w-5" />
+                        {Number(property.price).toLocaleString()}
+                      </div>
+                      <div className="mt-2 text-sm text-gray-600">
+                        {property.area} sq m
+                      </div>
+                      {property.images && property.images.length > 1 && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          +{property.images.length - 1} more {property.images.length - 1 === 1 ? 'photo' : 'photos'}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center text-gray-600 text-sm mb-2">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {property.city}, {property.state}
-                    </div>
-                    <div className="flex items-center text-primary-600 font-bold text-xl">
-                      <DollarSign className="h-5 w-5" />
-                      {Number(property.price).toLocaleString()}
-                    </div>
-                    <div className="mt-2 text-sm text-gray-600">
-                      {property.area} sq m
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
 
             {/* Pagination */}
@@ -150,6 +173,15 @@ export function PropertiesPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Empty State */}
+        {data && data.data.properties.length === 0 && (
+          <div className="text-center py-12">
+            <Home className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
+            <p className="text-gray-600">Try adjusting your filters</p>
+          </div>
         )}
       </div>
     </div>
