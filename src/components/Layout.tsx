@@ -10,14 +10,13 @@ export function Layout() {
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
-    
-    // Cleanup on unmount
+
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [mobileMenuOpen]);
 
@@ -43,6 +42,9 @@ export function Layout() {
                 className="text-gray-700 hover:text-[#9d8c2d]"
               >
                 Properties
+              </Link>
+              <Link to="/about" className="text-gray-700 hover:text-[#9d8c2d]">
+                About
               </Link>
               <Link
                 to="/contact"
@@ -72,7 +74,7 @@ export function Layout() {
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden p-2 hover:bg-gray-100 rounded-md transition-colors"
+              className="md:hidden p-2 hover:bg-gray-100 rounded-md transition-colors relative z-50"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -86,77 +88,101 @@ export function Layout() {
         </nav>
       </header>
 
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-hidden="true"
-          />
+      {/* Mobile Menu - Slide-in from right with backdrop blur */}
+      <div
+        className={`fixed inset-0 z-40 md:hidden transition-opacity duration-300 ${
+          mobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+      >
+        {/* Blurred Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
 
-          {/* Mobile Navigation Panel */}
-          <div className="fixed top-14 left-0 right-0 bottom-0 bg-white z-40 md:hidden overflow-y-auto">
-            <div className="px-4 py-4 space-y-2">
-              <Link
-                to="/"
-                className="block py-2 text-lg text-gray-700 hover:text-[#9d8c2d] hover:bg-gray-50 px-4 rounded-md transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                to="/properties"
-                className="block py-1 text-lg text-gray-700 hover:text-[#9d8c2d] hover:bg-gray-50 px-4 rounded-md transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Properties
-              </Link>
-              <Link
-                to="/contact"
-                className="block py-1 text-lg text-gray-700 hover:text-[#9d8c2d] hover:bg-gray-50 px-4 rounded-md transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Contact
-              </Link>
-
-              {isAuthenticated ? (
-                <>
-                  <Link
-                    to="/admin"
-                    className="block py-3 text-lg text-gray-700 hover:text-[#9d8c2d] hover:bg-gray-50 px-4 rounded-md transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  <div className="pt-4 px-4">
-                    <button
-                      onClick={() => {
-                        logout();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="btn btn-secondary w-full"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="pt-1 px-14">
-                  <Link
-                    to="/login"
-                    className="btn btn-primary w-full block text-center"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Login
-                  </Link>
-                </div>
-              )}
+        {/* Slide-in Panel */}
+        <div
+          className={`absolute top-0 right-0 h-full w-[280px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out ${
+            mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          {/* Menu Header */}
+          <div className="px-6 py-1 border-b border-gray-100">
+            <div className="flex items-center space-x-3">
+              <img src="/logo.png" alt="Logo" className="h-12 w-12" />
+              <span className="text-sm font-bold text-gray-900">
+                ICONIC URBAN HOMES
+              </span>
             </div>
           </div>
-        </>
-      )}
+
+          {/* Menu Items */}
+          <div className="px-4 py-6 space-y-2">
+            <Link
+              to="/"
+              className="block py-3 px-4 text-gray-700 hover:text-[#9d8c2d] hover:bg-[#9d8c2d]/5 rounded-lg transition-all duration-200 font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              to="/properties"
+              className="block py-3 px-4 text-gray-700 hover:text-[#9d8c2d] hover:bg-[#9d8c2d]/5 rounded-lg transition-all duration-200 font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Properties
+            </Link>
+            <Link
+              to="/about"
+              className="block py-3 px-4 text-gray-700 hover:text-[#9d8c2d] hover:bg-[#9d8c2d]/5 rounded-lg transition-all duration-200 font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              About
+            </Link>
+            <Link
+              to="/contact"
+              className="block py-3 px-4 text-gray-700 hover:text-[#9d8c2d] hover:bg-[#9d8c2d]/5 rounded-lg transition-all duration-200 font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Contact
+            </Link>
+
+            {isAuthenticated && (
+              <Link
+                to="/admin"
+                className="block py-3 px-4 text-gray-700 hover:text-[#9d8c2d] hover:bg-[#9d8c2d]/5 rounded-lg transition-all duration-200 font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+            )}
+          </div>
+
+          {/* Auth Button - Fixed at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-100 bg-white">
+            {isAuthenticated ? (
+              <button
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                className="btn btn-secondary w-full"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="btn btn-primary w-full block text-center"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Login
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
 
       <main className="flex-1">
         <Outlet />
@@ -181,13 +207,13 @@ export function Layout() {
               <div className="space-y-2">
                 <Link
                   to="/properties"
-                  className="block text-gray-400 hover:text-white"
+                  className="block text-gray-400 hover:text-white transition-colors"
                 >
                   Properties
                 </Link>
                 <Link
                   to="/contact"
-                  className="block text-gray-400 hover:text-white"
+                  className="block text-gray-400 hover:text-white transition-colors"
                 >
                   Contact Us
                 </Link>

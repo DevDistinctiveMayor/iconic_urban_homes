@@ -5,9 +5,9 @@ export function HomePage() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative py-20 text-white bg-[url('/public/hero-bg.jpg')] bg-cover bg-center">
-        {/* Color overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-600/80 to-primary-800/80"></div>
+      <section className="relative py-20 text-white bg-[url('/public/bg-hero.jpg')] bg-cover bg-center">
+  {/* Darker overlay for better text contrast */}
+  <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50"></div>
 
         {/* Content */}
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
